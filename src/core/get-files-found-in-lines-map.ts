@@ -1,12 +1,6 @@
-import {
-  AbsolutePathToFileContentLinesMap,
-  AbsoluteFilePath,
-  FileContentLine,
-} from "./getAbsolutePathToFileContentLinesMap";
-import { isDefinition } from "./isDefinition";
+import { FilesContentMap } from "./get-files-content-map";
 
-export type LineNumber = number;
-export type AbsolutePathToFoundInLineNumbersMap = {
+export type FilesFoundInLinesMap = {
   [path: AbsoluteFilePath]: LineNumber[];
 };
 
@@ -18,22 +12,34 @@ function findMatchingLineNumbers(
     if (isDefinition(line, searchText)) {
       accumulator.push(index + 1);
     }
+
     return accumulator;
   }, []);
 }
 
-export function getAbsolutePathToFoundInLineNumbersMap(
-  fileContentRecord: AbsolutePathToFileContentLinesMap,
+function isDefinition(line: string, searchText: string): boolean {
+  const searchTextWithColon =
+    searchText.at(-1) === ":" ? searchText : searchText + ":";
+
+  if (line.startsWith(searchTextWithColon)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function getFilesFoundInLinesMap(
+  fileContentRecord: FilesContentMap,
   searchText: string
-): AbsolutePathToFoundInLineNumbersMap {
-  return Object.entries(
-    fileContentRecord
-  ).reduce<AbsolutePathToFoundInLineNumbersMap>(
+): FilesFoundInLinesMap {
+  return Object.entries(fileContentRecord).reduce<FilesFoundInLinesMap>(
     (accumulator, [filePath, lines]) => {
       const lineNumbers = findMatchingLineNumbers(lines, searchText);
+
       if (lineNumbers.length > 0) {
         accumulator[filePath] = lineNumbers;
       }
+
       return accumulator;
     },
     {}
