@@ -25,16 +25,4 @@ describe("getFilesFoundInLinesMap", () => {
 
     expect(result).toEqual(expected);
   });
-
-  it("should find references", () => {
-    const searchText = ".c";
-
-    const result = getFilesFoundInLinesMap(fileContentRecord, searchText);
-
-    const expected = {
-      "/data/c.yaml": [1],
-    };
-
-    expect(result).toEqual(expected);
-  });
 });

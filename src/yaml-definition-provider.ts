@@ -19,34 +19,37 @@ export class YamlDefinitionProvider implements vscode.DefinitionProvider {
     document: vscode.TextDocument,
     position: vscode.Position
   ): vscode.Location[] {
-    this.logger?.log(document);
-    this.logger?.log(position);
     this.logger?.startPerformanceLog("Total time: provideDefinition");
 
     const name = this.getClicked(document, position);
     this.logger?.log("Looking for defenition of: ", name);
 
     const cacheKey = `${vscode.workspace.name}-${name}`;
-    this.logger?.log("cacheKey", cacheKey);
     const cachedResult = this.cache?.get(cacheKey);
 
     if (cachedResult) {
-      this.logger?.log("Returning cached result");
       this.logger?.endPerformanceLog("Total time: provideDefinition");
+      this.logger?.log("Returning cached result");
 
       return cachedResult;
     }
 
     const root = getWorkspaceRoot();
 
-    this.logger?.startPerformanceLog("Total time: getFilePathToLineNumbersMap");
+    this.logger?.startPerformanceLog("Total time: getFilesFoundInLinesMap");
+    this.logger?.startPerformanceLog("Total time: getFilesContentMap");
+    const filesContentMap = getFilesContentMap(root);
+    this.logger?.endPerformanceLog("Total time: getFilesContentMap");
+
     const filePathToLineNumbersMap = getFilesFoundInLinesMap(
-      getFilesContentMap(root),
+      filesContentMap,
       name
     );
-    this.logger?.endPerformanceLog("Total time: getFilePathToLineNumbersMap");
+    this.logger?.endPerformanceLog("Total time: getFilesFoundInLinesMap");
 
+    this.logger?.startPerformanceLog("Total time: getLocations");
     const locations = this.getLocations(filePathToLineNumbersMap);
+    this.logger?.endPerformanceLog("Total time: getLocations");
     this.cache?.set(cacheKey, locations);
 
     this.logger?.endPerformanceLog("Total time: provideDefinition");
@@ -72,9 +75,7 @@ export class YamlDefinitionProvider implements vscode.DefinitionProvider {
     );
   }
 
-  private getLocations(
-    filePathToLineNumbersMap: FilesFoundInLinesMap
-  ) {
+  private getLocations(filePathToLineNumbersMap: FilesFoundInLinesMap) {
     return Object.entries(filePathToLineNumbersMap).flatMap(
       ([filePath, lineNumbers]) =>
         this.createLocationsFromFilePath(filePath, lineNumbers)
